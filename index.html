@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+      li {
+        cursor: pointer;
+      }
+      #wrapper {
+        text-align: center;
+        margin: 0 auto;
+        padding: 0px;
+        width: 995px;
+      }
+      #drop-area {
+        margin-top: 20px;
+        margin-left: 220px;
+        width: 550px;
+        height: 200px;
+        background-color: white;
+        border: 3px dashed grey;
+      }
+      .drop-text {
+        margin-top: 70px;
+        color: grey;
+        font-size: 25px;
+        font-weight: bold;
+      }
+      #drop-area img {
+        max-width: 200px;
+      }
+    </style>
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.min.js"
+      integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      // search ------------------------------------------------------------------------------------
+      $(document).ready(function () {
+        $("input").on("keyup", function (event) {
+          event.preventDefault();
+          var name = $("#search").val();
+          $("#display").hide();
+
+          $.ajax({
+            type: "POST",
+            url: "main.php",
+            dataType: "JSON",
+            data: {
+              search: name,
+            },
+            success: function (data) {
+              const list = data.data;
+              $("#display").empty();
+              list.forEach((item) => {
+                $("#display").append(`<li>${item.name}</li>`);
+                $("li").on("click", function () {
+                  $("#search").val($(this).text());
+                });
+              });
+              $("#display").show();
+            },
+          });
+        });
+        // --------------------------------------------------------------------------------------
+        $("#fileInput").change(function () {
+          imagePreview(this);
+        });
+
+        function imagePreview(input) {
+          
+          if (input.files && input.files[0]) {
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+              $("#Image").attr("src", e.target.result);
+            };
+
+            reader.readAsDataURL(input.files[0]);
+          }
+        }
+
+        // upload image -------------------------------------------
+
+        $("#myForm").on("submit", function (e) {
+          e.preventDefault();
+          var formData = new FormData();
+          formData.append("file", $(fileInput)[0].files[0]);
+          $.ajax({
+            url: "main.php",
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (response) {
+              $("#Image").attr("src", response.imageurl).hide();
+              $("#Btn").show();
+
+              if (response.status === "success") {
+                $("#status").html(
+                  "File uploaded successfully: " + response.message
+                );
+              } else {
+                $("#status").html("Upload failed: " + response.message);
+              }
+            },
+          });
+        });
+        // download file ---------------------------------------------------------------------------
+
+        $("#Btn").click(function (event) {
+          event.preventDefault();
+          $.ajax({
+            url: "main.php",
+            type: "POST",
+            data: {
+              download: "download-image.jpg",
+            },
+            xhrFields: {
+              responseType: "blob",
+            },
+            success: function (response) {
+              var val = URL.createObjectURL(response);
+
+              // $("#a1").attr('href',val);
+              // $("#a1").attr('download','download_image.jpg');
+              // $("#a1")[0].click();
+              const a = document.createElement("a");
+              a.style.display = "none";
+              a.href = val;
+              a.download = "";
+              document.body.append(a);
+              a.click();
+              a.remove();
+            },
+          });
+        });
+        // ---------------------------------------------------------------------------------------------------
+        $("#drop-area").on("dragenter", function (e) {
+          e.preventDefault();
+        });
+        $("#drop-area").on("dragover", function (e) {
+          e.preventDefault();
+        });
+        $("#drop-area").on("drop", function (e) {
+          e.preventDefault();
+          var file = e.originalEvent.dataTransfer.files[0];
+         
+        ($('input[type="file"]')[0].files) =e.originalEvent.dataTransfer.files;
+          $("#a3").attr("src", `${URL.createObjectURL(file)}`);
+        });
+      })
+
+    </script>
+    <title>Document</title>
+  </head>
+
+  <body>
+    <form
+      id="myForm"
+      enctype="multipart/form-data"
+      style="text-align: center; margin-top: 40px"
+    >
+      <label for="search">Search User :</label>
+      <input type="search" id="search" name="Asearch" />
+      <button type="submit">search</button>
+
+      <div id="display"></div>
+      <br /><br />
+
+      <span>File</span>
+      <input type="file" id="fileInput" name="file" size="10" />
+
+      <button type="submit" id="uploadButton">Upload</button>
+      <div id="status"></div>
+      <img id="Image" src="" />
+      <br /><br />
+    </form>
+    <!-- <a id="a1" style="display: none;"></a> -->
+    <div style="text-align: center">
+      <button id="Btn" style="display: none">Download File</button>
+    </div>
+    <div id="wrapper">
+      <div id="drop-area">
+        <img src="" id="a3" />
+        <h3 class="drop-text">Drag and Drop Images Here</h3>
+      </div>
+    </div>
+  </body>
+</html>
+<!-- <html>
+
+<head>
+
+    <style>
+        .a1 {
+            cursor: pointer;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<body>
+
+    <h1>Example </h1>
+    <button id="btn1" type="button">click To Add</button>
+    <ul></ul>
+
+    <script>
+        const value = ["abc", "bcd", "cde"];
+
+        $(document).ready(function () {
+            $("#btn1").click(function () {
+                if (value.length) {
+                    $("ul").append("<li class='a1'>" + value[0] + "</li>");
+                    value.splice(0, 1);
+                }
+            }); 
+        });
+        $(document).on('click','.a1', function () {
+                if(confirm("you want to remove")){
+                    const item = $(this).text();
+                    value.push(item);
+                    $(this).remove();
+                    alert("Removed "+item);
+                }
+            });
+    </script>
+</body>
+
+</html> -->
+<!-- <!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+  $("button").click(function(){
+    $.ajax({url: "demo.txt", success: function(result){
+      $("#div1").html(result);
+    }});
+  });
+});
+</script>
+</head>
+<body>
+
+<div id="div1"><h2>Let jQuery AJAX Change This Text</h2></div>
+
+<button>Get External Content</button>
+
+</body>
+</html> -->
